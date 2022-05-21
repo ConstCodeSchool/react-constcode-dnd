@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { IMouse } from "../types";
 
 const useMouse = () => {
 	const [mouse, setMouse] = useState<IMouse>({

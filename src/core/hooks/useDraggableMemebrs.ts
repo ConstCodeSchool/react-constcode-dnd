@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { IDndDraggableMember } from "../types";
 
 const useDraggableMemebers = (): [
 	Array<IDndDraggableMember>,

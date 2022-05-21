@@ -1,108 +1,33 @@
-import { FC, ReactNode, RefObject, useCallback, useState } from "react";
-import { DndManager, Draggable, Droppable } from "./core";
-import useDraggable from "./core/hooks/useDraggable";
-import useDroppable from "./core/hooks/useDroppable";
+import { FC, useState } from "react";
 
 import "./style.css";
 
-const data = {
-	"1": ["a", "b"],
-	"2": ["c", "d"],
-	"3": ["e", "f"],
-};
+import Example01 from "./examples/Example01";
+import Example02 from "./examples/Example02";
+import Example03 from "./examples/Example03";
+import Example04 from "./examples/Example04";
 
-type keys = keyof typeof data;
+const examples = [Example01, Example02, Example03, Example04];
 
 const App: FC = () => {
-	const [state, setState] = useState(data);
-
-	const dragStartHandler = useCallback<dragStartHandler>((e, draggable) => {
-		console.log("dragStartHandler", e, draggable);
-	}, []);
-
-	const dragHandler = useCallback<dragHandler>((e, draggable) => {
-		console.log("dragHandler", e, draggable);
-	}, []);
-
-	const dragEndHandler = useCallback<dragEndHandler>((e, draggable) => {
-		console.log("dragEndHandler", e, draggable);
-	}, []);
-
-	const dragEnterHandler = useCallback<dragEnterHandler>(
-		(e, draggable, droppable) => {
-			console.log("dragenter", draggable, droppable);
-		},
-		[]
-	);
-
-	const dragOverHandler = useCallback<dragOverHandler>(
-		(e, draggable, droppable) => {
-			console.log(draggable, droppable);
-		},
-		[]
-	);
-
-	const dragLeaveHandler = useCallback<dragOverHandler>(
-		(e, draggable, droppable) => {
-			console.log("dragleave", draggable, droppable);
-		},
-		[]
-	);
-
-	const dropHandler = useCallback<dropHandler>((e, draggable, droppable) => {
-		console.log("drop", draggable, droppable);
-	}, []);
+	const [index, setIndex] = useState(3);
+	const Example = examples[index];
 
 	return (
 		<>
-			{(Object.keys(state) as keys[]).map((droppableKey) => (
-				<Zone key={droppableKey} index={droppableKey}>
-					{state[droppableKey].map((draggableKey) => (
-						<Item key={draggableKey} index={draggableKey} />
-					))}
-				</Zone>
-			))}
+			<select
+				value={index}
+				onChange={(e) => setIndex(parseInt(e.target.value, 10))}
+			>
+				{examples.map((_, index) => (
+					<option key={index} value={index}>
+						Пример {index + 1}
+					</option>
+				))}
+			</select>
+			<Example />
 		</>
 	);
 };
 
 export default App;
-
-interface ItemProps {
-	index: string;
-}
-
-const Item: FC<ItemProps> = ({ index }) => {
-	const [ref, style] = useDraggable({ index });
-
-	return (
-		<div
-			ref={ref as RefObject<HTMLDivElement>}
-			className="draggable"
-			data-draggable={index}
-			style={style}
-		>
-			{index}
-		</div>
-	);
-};
-
-interface ZoneProps {
-	index: string;
-	children: ReactNode | ReactNode[];
-}
-
-const Zone: FC<ZoneProps> = ({ index, children }) => {
-	const [Wrapper, ref] = useDroppable({ index });
-	return (
-		<Wrapper>
-			<div
-				ref={ref as RefObject<HTMLDivElement>}
-				className="droppable"
-				data-droppable={index}
-			>
-				{index}: {children}
-			</div>
-		</Wrapper>
-	);
-};

@@ -4,13 +4,43 @@ import useDraggableMemebers from "../hooks/useDraggableMemebrs";
 import useDroppableMemebrs from "../hooks/useDroppableMembers";
 import useElementsUnder from "../hooks/useElementsUnder";
 import useMouse from "../hooks/useMouse";
+import {
+	dragStartHandler,
+	dragHandler,
+	dragEndHandler,
+	dragEnterHandler,
+	dragLeaveHandler,
+	dragOverHandler,
+	dropHandler,
+	IDndDraggableMember,
+	IDndDroppableMember,
+} from "../types";
 import { isEqualArray, isIntersaction } from "../util";
 
 interface DndManagerProps {
 	children: ReactNode | ReactNode[];
+
+	onDragStart?: dragStartHandler;
+	onDrag?: dragHandler;
+	onDragEnd?: dragEndHandler;
+
+	onDragEnter?: dragEnterHandler;
+	onDragLeave?: dragLeaveHandler;
+	onDragOver?: dragOverHandler;
+	onDrop?: dropHandler;
 }
 
-const DndManager: FC<DndManagerProps> = ({ children }) => {
+const DndManager: FC<DndManagerProps> = ({
+	children,
+
+	onDragStart,
+	onDrag,
+	onDragEnd,
+	onDragEnter,
+	onDragLeave,
+	onDragOver,
+	onDrop,
+}) => {
 	const mouse = useMouse();
 	const elements = useElementsUnder(mouse.x, mouse.y);
 
@@ -43,11 +73,16 @@ const DndManager: FC<DndManagerProps> = ({ children }) => {
 		) {
 			for (const element of elements) {
 				for (const member of draggableMembers) {
-					if (member.element === element) {
-						setDraggable(member);
+					for (const handle of member.handles) {
+						if (handle.current === element) {
+							setDraggable(member);
+							return;
+						}
 					}
 				}
 			}
+
+			setDraggable(null);
 		}
 	}, [draggableMembers, elements, mouse.left, mouse.pleft]);
 
@@ -87,6 +122,13 @@ const DndManager: FC<DndManagerProps> = ({ children }) => {
 			removeDraggableMemeber,
 			addDroppableMember,
 			removeDroppableMember,
+			onDragStart,
+			onDrag,
+			onDragEnd,
+			onDragEnter,
+			onDragLeave,
+			onDragOver,
+			onDrop,
 		}),
 		[
 			mouse,
@@ -98,6 +140,13 @@ const DndManager: FC<DndManagerProps> = ({ children }) => {
 			removeDraggableMemeber,
 			addDroppableMember,
 			removeDroppableMember,
+			onDragStart,
+			onDrag,
+			onDragEnd,
+			onDragEnter,
+			onDragLeave,
+			onDragOver,
+			onDrop,
 		]
 	);
 
@@ -112,7 +161,8 @@ const DndManager: FC<DndManagerProps> = ({ children }) => {
 				for (const member of draggableMembers) {
 					if (
 						member.element === element &&
-						member.source === droppable.index
+						member.source === droppable.index &&
+						draggable?.element !== element
 					) {
 						targets.push(member.index);
 					}
@@ -126,7 +176,7 @@ const DndManager: FC<DndManagerProps> = ({ children }) => {
 				);
 			}
 		}
-	}, [draggableMembers, droppable, elements]);
+	}, [draggable?.element, draggableMembers, droppable, elements]);
 
 	return (
 		<DndManagerContext.Provider value={value}>

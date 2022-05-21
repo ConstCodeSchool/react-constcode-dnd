@@ -1,0 +1,27 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	overflow: hidden;
+}
+
+.desk {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-around;
+	height: 90vh;
+}
+
+.column {
+	border: 1px solid blue;
+	width: 200px;
+	height: 100%;
+	padding: 5px;
+}
+
+.card {
+	border: 1px solid red;
+	width: 190px;
+}

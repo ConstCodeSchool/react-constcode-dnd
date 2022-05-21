@@ -1,4 +1,10 @@
 import { createContext } from "react";
+import {
+	IDndManagerContext,
+	IMouse,
+	IDndDraggableMember,
+	IDndMember,
+} from "../types";
 
 const DndManagerContext = createContext<IDndManagerContext>({
 	mouse: {} as IMouse,

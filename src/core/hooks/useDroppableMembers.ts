@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { IDndMember } from "../types";
 
 const useDroppableMemebrs = (): [
 	Array<IDndMember>,

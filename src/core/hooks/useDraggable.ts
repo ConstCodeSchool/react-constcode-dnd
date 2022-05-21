@@ -9,12 +9,21 @@ import {
 import useDndManager from "../hooks/useDndManager";
 import useDroppableContext from "../hooks/useDroppableContext";
 import useKind from "../hooks/useKind";
+import {
+	dragStartHandler,
+	dragHandler,
+	dragEndHandler,
+	IDroppableContext,
+	IDndDraggableMember,
+} from "../types";
 import { isIntersaction } from "../util";
+import useHandles from "./useHandles";
 
 interface useDraggableProps {
 	innerRef?: RefObject<Element>;
 	index: string;
 	kind?: string[];
+	handles?: Array<RefObject<Element>>;
 
 	onDragStart?: dragStartHandler;
 	onDrag?: dragHandler;
@@ -23,7 +32,7 @@ interface useDraggableProps {
 
 const kindDefault = [""];
 
-const startselectHandler = (e: Event) => {
+const selectstartHandler = (e: Event) => {
 	e.preventDefault();
 	e.stopPropagation();
 };
@@ -32,11 +41,12 @@ const useDraggable = ({
 	innerRef,
 	index,
 	kind = kindDefault,
+	handles = [],
 
 	onDragStart,
 	onDrag,
 	onDragEnd,
-}: useDraggableProps): [RefObject<Element>, CSSProperties] => {
+}: useDraggableProps): [RefObject<Element>, CSSProperties, boolean] => {
 	const [dragged, setDragged] = useState(false);
 	const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -47,6 +57,10 @@ const useDraggable = ({
 		prevDraggable,
 		addDraggableMemeber,
 		removeDraggableMemeber,
+
+		onDragStart: managerOnDragStart,
+		onDrag: managerOnDrag,
+		onDragEnd: managerOnDragEnd,
 	} = useDndManager();
 
 	const myKind = useKind(kind);
@@ -54,6 +68,8 @@ const useDraggable = ({
 		() => (innerRef ? innerRef : createRef<Element>()),
 		[innerRef]
 	);
+
+	const myHandles = useHandles(ref, handles);
 
 	const droppableParent = useDroppableContext();
 
@@ -87,19 +103,18 @@ const useDraggable = ({
 		if (ref.current) {
 			const { current } = ref;
 
-			const memeber: IDndDraggableMember = {
+			const member: IDndDraggableMember = {
 				index,
 				kind: myKind,
+				handles: myHandles,
 				element: current,
 				source,
 			};
 
-			addDraggableMemeber(memeber);
-			current.addEventListener("selectstart", startselectHandler);
+			addDraggableMemeber(member);
 
 			return () => {
-				removeDraggableMemeber(memeber);
-				current.removeEventListener("selectstart", startselectHandler);
+				removeDraggableMemeber(member);
 			};
 		}
 	}, [
@@ -107,6 +122,7 @@ const useDraggable = ({
 		index,
 		myKind,
 		ref,
+		myHandles,
 		removeDraggableMemeber,
 		source,
 	]);
@@ -128,10 +144,14 @@ const useDraggable = ({
 				y: mouse.y - rect.top + (parseInt(style.marginTop) || 0),
 			});
 
-			window.addEventListener("selectstart", startselectHandler);
+			window.addEventListener("selectstart", selectstartHandler);
 
 			if (onDragStart) {
 				onDragStart(mouse.event, draggable, droppable);
+			}
+
+			if (managerOnDragStart) {
+				managerOnDragStart(mouse.event, draggable, droppable);
 			}
 		}
 	}, [
@@ -145,11 +165,18 @@ const useDraggable = ({
 		mouse.y,
 		onDragStart,
 		ref,
+		managerOnDragStart,
 	]);
 
 	useEffect(() => {
-		if (draggable && dragged && mouse.dx | mouse.dy && onDrag) {
-			onDrag(mouse.event, draggable, droppable);
+		if (draggable && dragged && mouse.dx | mouse.dy) {
+			if (onDrag) {
+				onDrag(mouse.event, draggable, droppable);
+			}
+
+			if (managerOnDrag) {
+				managerOnDrag(mouse.event, draggable, droppable);
+			}
 		}
 	}, [
 		draggable,
@@ -158,6 +185,7 @@ const useDraggable = ({
 		mouse.dy,
 		mouse.event,
 		onDrag,
+		managerOnDrag,
 		droppable,
 	]);
 
@@ -165,15 +193,52 @@ const useDraggable = ({
 		if (dragged && !draggable && prevDraggable) {
 			setDragged(false);
 
-			window.removeEventListener("selectstart", startselectHandler);
+			window.removeEventListener("selectstart", selectstartHandler);
 
 			if (onDragEnd) {
 				onDragEnd(mouse.event, prevDraggable, droppable);
 			}
-		}
-	}, [draggable, dragged, mouse.event, onDragEnd, prevDraggable, droppable]);
 
-	return [ref, style];
+			if (managerOnDragEnd) {
+				managerOnDragEnd(mouse.event, prevDraggable, droppable);
+			}
+		}
+	}, [
+		draggable,
+		dragged,
+		mouse.event,
+		onDragEnd,
+		prevDraggable,
+		droppable,
+		managerOnDragEnd,
+	]);
+
+	useEffect(() => {
+		const elements: Array<Element> = [];
+
+		for (const handle of myHandles) {
+			if (handle.current) {
+				elements.push(handle.current);
+			}
+		}
+
+		if (elements.length) {
+			for (const element of elements) {
+				element.addEventListener("selectstart", selectstartHandler);
+			}
+
+			return () => {
+				for (const element of elements) {
+					element.removeEventListener(
+						"selectstart",
+						selectstartHandler
+					);
+				}
+			};
+		}
+	}, [myHandles]);
+
+	return [ref, style, dragged];
 };
 
 export default useDraggable;

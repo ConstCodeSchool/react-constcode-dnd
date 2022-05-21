@@ -1,3 +1,5 @@
+import { RefObject } from "react";
+
 // Contexts
 
 interface IDndManagerContext {
@@ -6,10 +8,20 @@ interface IDndManagerContext {
 	prevDraggable: IDndDraggableMember | null;
 	droppable: IDndDroppableMember | null;
 	prevDroppable: IDndDroppableMember | null;
+
 	addDraggableMemeber: (memeber: IDndDraggableMember) => void;
 	removeDraggableMemeber: (memeber: IDndDraggableMember) => void;
 	addDroppableMember: (memeber: IDndMember) => void;
 	removeDroppableMember: (memeber: IDndMember) => void;
+
+	onDragStart?: dragStartHandler;
+	onDrag?: dragHandler;
+	onDragEnd?: dragEndHandler;
+
+	onDragEnter?: dragEnterHandler;
+	onDragLeave?: dragLeaveHandler;
+	onDragOver?: dragOverHandler;
+	onDrop?: dropHandler;
 }
 
 interface IDroppableContext {
@@ -38,6 +50,7 @@ interface IDndMember {
 
 interface IDndDraggableMember extends IDndMember {
 	source: string | null;
+	handles: Array<RefObject<Element>>;
 }
 
 interface IDndDroppableMember extends IDndMember {
